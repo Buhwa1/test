@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import messagebox
-import mysql.connector
+# import mysql.connector
 from tkinter import filedialog
 
 
 class Application(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        self.title("Image Uploader")
+        self.title("Squint Detection App")
         self.geometry("400x300")
         
         # Create a sidebar frame
