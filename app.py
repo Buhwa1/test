@@ -5,92 +5,9 @@ import bcrypt
 import re
 
 
-class App(tk.Frame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.grid()
-        self.login()
-
-    def login(self):
-        """login to account"""
-        # clear the frame
-        self.clear_widgets()
-
-        # labels
-        self.title = tk.Label(text="Log in", font=("Arial", 15, "bold"))
-        self.email_label = tk.Label(text="Email")
-        self.password_label = tk.Label(text="Password")
-
-        # textvariable
-        current_email = tk.StringVar()
-        current_password = tk.StringVar()
-
-        # entries
-        self.email_input = tk.Entry(width=30, font=(
-            "Arial", 10), textvariable=current_email)
-        self.password_input = tk.Entry(
-            width=30, show="*", font=("Arial", 10, "bold"), textvariable=current_password)
-
-        # buttons
-        self.login_button = tk.Button(text="login", command=lambda: self.authenticate(
-            current_email.get(), current_password.get()))
-        self.register_button = tk.Button(
-            text="Register", command=self.register)
-
-        # positioning
-        self.title.grid(row=0, column=0, columnspan=3)
-        self.email_label.grid(row=1, column=0)
-        self.password_label.grid(row=2, column=0)
-        self.email_input.grid(row=1, column=1, columnspan=2, pady=3)
-        self.password_input.grid(row=2, column=1, columnspan=2, pady=3)
-        self.login_button.grid(row=3, column=1, pady=3)
-        self.register_button.grid(row=3, column=2, pady=3)
-
-    def register(self):
-        """create an account"""
-        # clear the frame
-        self.clear_widgets()
-
-        # labels
-        self.title = tk.Label(text="Register", font=("Arial", 15, "bold"))
-        self.email_label = tk.Label(text="Email")
-        self.fname_label = tk.Label(text="First Name")
-        self.lname_label = tk.Label(text="Last Name")
-        self.password_label = tk.Label(text="Password")
-
-        # textvariable
-        current_email = tk.StringVar()
-        current_password = tk.StringVar()
-        current_fname = tk.StringVar()
-        current_lname = tk.StringVar()
-
-        # entries
-        self.email_input = tk.Entry(width=30, font=(
-            "Arial", 10), textvariable=current_email)
-        self.fname_input = tk.Entry(width=30, font=(
-            "Arial", 10), textvariable=current_fname)
-        self.lname_input = tk.Entry(width=30, font=(
-            "Arial", 10), textvariable=current_lname)
-        self.password_input = tk.Entry(width=30, font=(
-            "Arial", 10), textvariable=current_password)
-
-        # buttons
-        self.register_button = tk.Button(
-            text="Register", command=lambda: self.createAccount(current_fname.get(), current_lname.get(), current_email.get(), current_password.get()))
-
-        # positioning
-        self.title.grid(row=0, column=0, columnspan=2)
-        self.fname_label.grid(row=1, column=0)
-        self.lname_label.grid(row=2, column=0)
-        self.email_label.grid(row=3, column=0)
-        self.password_label.grid(row=4, column=0)
-
-        self.fname_input.grid(row=1, column=1, pady=3)
-        self.lname_input.grid(row=2, column=1, pady=3)
-        self.email_input.grid(row=3, column=1, pady=3)
-        self.password_input.grid(row=4, column=1, pady=3)
-
-        self.register_button.grid(row=5, column=1)
+class Frame(tk.Frame):
+    def __init__():
+        super().__init__()
 
     def createAccount(self, fname, lname, email, password):
         if not (fname and lname and email and password):
@@ -219,17 +136,108 @@ class App(tk.Frame):
                     messagebox.showinfo(
                         "Login", "You entered an incorrect password!")
 
-    def clear_widgets(self):
-        """remove all widgets in the frame"""
-        for widget in self.winfo_children():
-            widget.destroy()
+
+class Login(Frame):
+    """login to account"""
+
+    def __init__(self):
+        # labels
+        self.title = tk.Label(text="Log in", font=("Arial", 15, "bold"))
+        self.email_label = tk.Label(text="Email")
+        self.password_label = tk.Label(text="Password")
+
+        # textvariable
+        current_email = tk.StringVar()
+        current_password = tk.StringVar()
+
+        # entries
+        self.email_input = tk.Entry(width=30, font=(
+            "Arial", 10), textvariable=current_email)
+        self.password_input = tk.Entry(
+            width=30, show="*", font=("Arial", 10, "bold"), textvariable=current_password)
+
+        # buttons
+        self.login_button = tk.Button(text="login", command=lambda: self.authenticate(
+            current_email.get(), current_password.get()))
+        self.register_button = tk.Button(
+            text="Register")
+
+        # positioning
+        self.title.grid(row=0, column=0, columnspan=3)
+        self.email_label.grid(row=1, column=0)
+        self.password_label.grid(row=2, column=0)
+        self.email_input.grid(row=1, column=1, columnspan=2, pady=3)
+        self.password_input.grid(row=2, column=1, columnspan=2, pady=3)
+        self.login_button.grid(row=3, column=1, pady=3)
+        self.register_button.grid(row=3, column=2, pady=3)
 
 
-root = tk.Tk()
-root.title("Squints Detection Application")
-root.geometry("400x200")
+class Register(Frame):
+    """create an account"""
+
+    def __init__(self):
+        # labels
+        self.title = tk.Label(text="Register", font=("Arial", 15, "bold"))
+        self.email_label = tk.Label(text="Email")
+        self.fname_label = tk.Label(text="First Name")
+        self.lname_label = tk.Label(text="Last Name")
+        self.password_label = tk.Label(text="Password")
+
+        # textvariable
+        current_email = tk.StringVar()
+        current_password = tk.StringVar()
+        current_fname = tk.StringVar()
+        current_lname = tk.StringVar()
+
+        # entries
+        self.email_input = tk.Entry(width=30, font=(
+            "Arial", 10), textvariable=current_email)
+        self.fname_input = tk.Entry(width=30, font=(
+            "Arial", 10), textvariable=current_fname)
+        self.lname_input = tk.Entry(width=30, font=(
+            "Arial", 10), textvariable=current_lname)
+        self.password_input = tk.Entry(width=30, font=(
+            "Arial", 10), textvariable=current_password)
+
+        # buttons
+        self.register_button = tk.Button(
+            text="Register", command=lambda: self.createAccount(current_fname.get(), current_lname.get(), current_email.get(), current_password.get()))
+
+        # positioning
+        self.title.grid(row=0, column=0, columnspan=2)
+        self.fname_label.grid(row=1, column=0)
+        self.lname_label.grid(row=2, column=0)
+        self.email_label.grid(row=3, column=0)
+        self.password_label.grid(row=4, column=0)
+
+        self.fname_input.grid(row=1, column=1, pady=3)
+        self.lname_input.grid(row=2, column=1, pady=3)
+        self.email_input.grid(row=3, column=1, pady=3)
+        self.password_input.grid(row=4, column=1, pady=3)
+
+        self.register_button.grid(row=5, column=1)
+
+
+class App(tk.Tk):
+    def __init__(self):
+        self.frame_login = Login()
+        self.frame_register = Register()
+        self.showLogin()
+
+    def showLogin(self):
+        self.frame_register.grid_remove()  # Hide the register frame
+        self.frame_login.grid()
+
+    def showRegister(self):
+        self.frame_login.grid_remove()  # Hide the login frame
+        self.frame_register.grid()
+
+
+# root = tk.Tk()
+# root.title("Squints Detection Application")
+# root.geometry("400x200")
 # Configure column and row to center
 # root.columnconfigure((0, 1, 2), weight=1)
 # root.rowconfigure((0, 1, 2), weight=1)
-app = App(root)
+app = Login()
 app.mainloop()
