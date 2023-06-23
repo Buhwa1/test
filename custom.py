@@ -1,8 +1,13 @@
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, StringVar
 import mysql.connector
+from tkinter import filedialog
+from PIL import ImageTk, Image
+import tensorflow as tf
+import numpy as np
 import bcrypt
 import re
+import cv2
 
 # Modes: system (default), light, dark
 ctk.set_appearance_mode("light")
@@ -86,8 +91,10 @@ class MyFrame(ctk.CTkFrame):
                         "", "There is no account with the above Email!")
                 else:
                     if (bcrypt.checkpw(password.encode("utf-8"), row[0].encode("utf-8"))):
-                        messagebox.showinfo(
-                            "Login", "You have successfully logged in")
+                        # messagebox.showinfo(
+                        #     "Login", "You have successfully logged in")
+                        self.home()
+
                     else:
                         messagebox.showinfo(
                             "Login", "You entered an incorrect password!")
@@ -199,6 +206,52 @@ class MyFrame(ctk.CTkFrame):
             # close cursor and database connection
             cursor.close()
             db.close()
+
+    def open_image(self):
+        # clear the frame
+        for widget in self.winfo_children():
+            widget.destroy()
+        # Open a file dialog to select an image
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
+
+        if file_path:
+            # get and display image
+            my_image = ctk.CTkImage(
+                light_image=Image.open(file_path), size=(300, 300))
+            image_label = ctk.CTkLabel(self, image=my_image, text="")
+            image_label.pack(pady=20)
+
+            # obtain prediction from model
+            IMG_SIZE = 224
+            image_array = cv2.imread(file_path)
+            image_resized = cv2.resize(image_array, (IMG_SIZE, IMG_SIZE))
+            model_path = "C:\\Users\\hp\\projects\\data_science\\squint_detection\\Models\\Squint_detector_20230520150447_model"
+            model = tf.keras.models.load_model(model_path)
+            yhat = model.predict(np.expand_dims(image_resized, axis=0))
+            prediction = StringVar(value='Eyes are squinted' if (
+                yhat > 0.5) else 'Eyes are not squinted')
+
+            # display the prediction
+            display_frame = ctk.CTkFrame(self, width=300, height=45)
+            display_frame.pack()
+            prediction_label = ctk.CTkEntry(
+                display_frame, width=180, height=35, border_width=0, textvariable=prediction, corner_radius=10, state="disabled")
+            prediction_label.grid(row=0, column=0, padx=10, pady=10)
+            home_button = ctk.CTkButton(display_frame, text="Home", text_color="white", font=(
+                "Arial", 18), border_width=0, corner_radius=8, width=80, command=self.home, height=35)
+            home_button.grid(row=0, column=1, padx=10, pady=10)
+
+    def home(self):
+        # clear the frame
+        for widget in self.winfo_children():
+            widget.destroy()
+        title_label = ctk.CTkLabel(
+            self, text="Welcome...", font=("Arial", 30), width=300)
+        title_label.pack(pady=20)
+        select_image = ctk.CTkButton(self, text="Upload Image", width=100,
+                                     height=30, corner_radius=8, border_width=0, command=self.open_image, font=("Arial", 18), text_color="white")
+        select_image.pack(pady=10)
 
 
 class App(ctk.CTk):
