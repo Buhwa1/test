@@ -3,6 +3,9 @@ from tkinter import messagebox, StringVar
 import mysql.connector
 from tkinter import filedialog
 from PIL import ImageTk, Image
+from datetime import datetime
+from io import BytesIO
+import base64
 import tensorflow as tf
 import numpy as np
 import bcrypt
@@ -18,6 +21,10 @@ ctk.set_default_color_theme("blue")
 class MyFrame(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
+
+        # Create a cache dictionary for the model
+        self.model_cache = {}
+        self.userid = None
     # add widgets onto the frame, for example:
 
     def login_view(self):
@@ -31,9 +38,9 @@ class MyFrame(ctk.CTkFrame):
         button_frame = ctk.CTkFrame(
             self, width=300, height=40, border_width=0, bg_color="transparent")
         login_button = ctk.CTkButton(
-            button_frame, text="login", text_color="black", width=100, height=30, font=("Arial", 18), corner_radius=8, border_width=0, command=lambda: self.login(email.get(), password.get()))
+            button_frame, text="login", text_color="white", width=100, height=30, font=("Arial", 18), corner_radius=8, border_width=0, command=lambda: self.login(email.get(), password.get()))
         register_button = ctk.CTkButton(
-            button_frame, text="register", text_color="black", width=100, height=30, font=("Arial", 18), corner_radius=8, border_width=0, command=self.showRegister)
+            button_frame, text="register", text_color="white", width=100, height=30, font=("Arial", 18), corner_radius=8, border_width=0, command=self.showRegister)
 
         legend.pack()
         email.pack(pady=10)
@@ -60,7 +67,7 @@ class MyFrame(ctk.CTkFrame):
         password = ctk.CTkEntry(
             self, placeholder_text="Enter Password", width=300, height=35,  text_color="black", border_width=0, font=("Arial", 18), corner_radius=10, show="*")
         register_button = ctk.CTkButton(
-            self, text="register", text_color="black", width=100, height=30, font=("Arial", 18), corner_radius=8, border_width=0, command=lambda: self.register(first_name.get(), last_name.get(), email.get(), password.get()))
+            self, text="register", text_color="white", width=100, height=30, font=("Arial", 18), corner_radius=8, border_width=0, command=lambda: self.register(first_name.get(), last_name.get(), email.get(), password.get()))
 
         legend.pack()
         first_name.pack(pady=10)
@@ -68,6 +75,73 @@ class MyFrame(ctk.CTkFrame):
         email.pack(pady=10)
         password.pack(pady=10)
         register_button.pack(pady=10)
+
+    def history_view(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+        back_button = ctk.CTkButton(self, width=30, height=30, command=self.home,
+                                    border_width=0, image=ctk.CTkImage(light_image=Image.open("images/back.png"), size=(30, 30)), text="", anchor="center", fg_color="transparent", corner_radius=8, hover_color="#F8F9FA")
+        back_button.pack(anchor='w', padx=10, pady=10)
+
+        # Connect to the database
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="project"
+        )
+        cursor = db.cursor()
+
+        query = f"SELECT image, time, prediction, id FROM history WHERE user={self.userid}"
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        if rows:
+            for row in rows:
+                frame = ctk.CTkFrame(
+                    self, width=300, border_width=0, height=200)
+                frame.pack(pady=20, padx=10)
+                stream = BytesIO(row[0])
+                image = Image.open(stream)
+                print(image)
+                prediction = "Eyes not squinted" if (
+                    row[2] != 1) else "Squinted eyes"
+                time_formated = row[1].strftime("%d %b, %Y %I:%M %p")
+
+                image_container = ctk.CTkImage(
+                    light_image=image, size=(180, 180))
+                image_label = ctk.CTkLabel(
+                    frame, image=image_container, text="")
+                image_label.grid(row=0, column=0, rowspan=3, padx=5, pady=10)
+
+                prediction_label = ctk.CTkLabel(
+                    frame, width=200, text=prediction, font=("Arial", 20), text_color="black")
+                prediction_label.grid(row=0, column=1, padx=5)
+
+                time_label = ctk.CTkLabel(frame, width=200, text=time_formated, font=(
+                    "Arial", 15), text_color="black")
+                time_label.grid(row=1, column=1, padx=5)
+
+                remove_button = ctk.CTkButton(frame, width=100, height=35, text="Remove", font=(
+                    "Arial", 18), text_color="white", command=lambda: self.remove(row[3]))
+                remove_button.grid(row=2, column=1, pady=10, padx=10)
+        # close database connection
+        db.close()
+        cursor.close()
+
+    def remove(self, id):
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="project"
+        )
+        cursor = db.cursor()
+        query = f"DELETE FROM history WHERE id={id}"
+        cursor.execute(query)
+        db.commit()
+        db.close()
+        cursor.close()
+        self.history_view()
 
     def login(self, email, password):
         """authenticate a user"""
@@ -83,16 +157,17 @@ class MyFrame(ctk.CTkFrame):
                 cursor = db.cursor()
 
                 # check if email is  exists
-                query = f"SELECT password FROM users WHERE email='{email}'"
+                query = f"SELECT id, password FROM users WHERE email='{email}'"
                 cursor.execute(query)
                 row = cursor.fetchone()
                 if not row:
                     messagebox.showinfo(
                         "", "There is no account with the above Email!")
                 else:
-                    if (bcrypt.checkpw(password.encode("utf-8"), row[0].encode("utf-8"))):
+                    if (bcrypt.checkpw(password.encode("utf-8"), row[1].encode("utf-8"))):
                         # messagebox.showinfo(
                         #     "Login", "You have successfully logged in")
+                        self.userid = row[0]
                         self.home()
 
                     else:
@@ -211,26 +286,36 @@ class MyFrame(ctk.CTkFrame):
         # clear the frame
         for widget in self.winfo_children():
             widget.destroy()
+        forward_button = ctk.CTkButton(self, width=30, height=30, command=self.home,
+                                       border_width=0, image=ctk.CTkImage(light_image=Image.open("images/forward.png"), size=(30, 30)), text="", anchor="center", fg_color="transparent", corner_radius=8, hover_color="#F8F9FA")
+        forward_button.pack(anchor='e', padx=10, pady=10)
         # Open a file dialog to select an image
         file_path = filedialog.askopenfilename(
             filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
 
         if file_path:
             # get and display image
-            my_image = ctk.CTkImage(
-                light_image=Image.open(file_path), size=(300, 300))
-            image_label = ctk.CTkLabel(self, image=my_image, text="")
+            image = Image.open(file_path)
+            image_container = ctk.CTkImage(
+                light_image=image, size=(300, 300))
+            image_label = ctk.CTkLabel(self, image=image_container, text="")
             image_label.pack(pady=20)
 
             # obtain prediction from model
             IMG_SIZE = 224
             image_array = cv2.imread(file_path)
             image_resized = cv2.resize(image_array, (IMG_SIZE, IMG_SIZE))
-            model_path = "C:\\Users\\hp\\projects\\data_science\\squint_detection\\Models\\Squint_detector_20230520150447_model"
-            model = tf.keras.models.load_model(model_path)
+            model = self.loadModel(self.model_cache)
             yhat = model.predict(np.expand_dims(image_resized, axis=0))
             prediction = StringVar(value='Eyes are squinted' if (
                 yhat > 0.5) else 'Eyes are not squinted')
+
+            # save history
+            stream = BytesIO()
+            image.save(stream, format='JPEG')
+            image_blob = stream.getvalue()
+            stream.close()
+            self.saveHistory(image_blob, yhat)
 
             # display the prediction
             display_frame = ctk.CTkFrame(self, width=300, height=45)
@@ -249,15 +334,55 @@ class MyFrame(ctk.CTkFrame):
         title_label = ctk.CTkLabel(
             self, text="Welcome...", font=("Arial", 30), width=300)
         title_label.pack(pady=20)
-        select_image = ctk.CTkButton(self, text="Upload Image", width=100,
+        home_buttons = ctk.CTkFrame(self, width=300, height=45, border_width=0)
+        home_buttons.pack()
+        select_image = ctk.CTkButton(home_buttons, text="Upload Image", width=100,
                                      height=30, corner_radius=8, border_width=0, command=self.open_image, font=("Arial", 18), text_color="white")
-        select_image.pack(pady=10)
+        select_image.grid(pady=10, row=0, column=1, padx=10)
+        view_history = ctk.CTkButton(home_buttons, text="History", width=100,
+                                     height=30, corner_radius=8, border_width=0, command=self.history_view, font=("Arial", 18), text_color="white")
+        view_history.grid(pady=10, row=0, column=0, padx=10)
+
+    def loadModel(self, model_cache):
+        """load model from disk or from cache"""
+        if model_cache.get("model") is not None:
+            return model_cache["model"]
+        else:
+            model_path = "C:\\Users\\hp\\projects\\data_science\\squint_detection\\Models\\Squint_detector_20230520150447_model"
+            model = tf.keras.models.load_model(model_path)
+            self.model_cache["model"] = model
+            return model
+
+    def saveHistory(self, image, yhat):
+        """save history of predictions made for each user"""
+        if (self.userid and image and yhat):
+            prediction = 1 if (yhat > 0.5) else 0
+            current_datetime = datetime.now()
+
+            # connect to database
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="project"
+            )
+            cursor = db.cursor()
+
+            query = "INSERT INTO history(user, image, prediction, time) VALUES (%s, %s, %s, %s)"
+            values = (self.userid, image, prediction, current_datetime)
+            cursor.execute(query, values)
+            db.commit()
+            # close connection and curser
+            cursor.close()
+            db.close()
+        else:
+            messagebox.showerror("Error", "User history is not being saved")
 
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("400x500")
+        self.geometry("500x500")
         self.title("Squinted Eyes Detection App")
         self.grid_rowconfigure(0, weight=1)  # configure grid system
         self.grid_columnconfigure(0, weight=1)
